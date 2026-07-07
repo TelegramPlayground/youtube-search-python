@@ -1,4 +1,5 @@
 import copy
+import re
 from typing import Union
 
 from youtubesearchpython.core import VideoCore
@@ -1882,17 +1883,25 @@ class Transcript:
 
 
 class Channel(ChannelCore):
-    def __init__(self, channel_id: str, request_type: str = ChannelRequestType.playlists):
+    def __init__(self, channel_id: str, request_type: str = ChannelRequestType.info):
         super().__init__(channel_id, request_type)
 
     async def init(self):
+        if not re.match(r'^UC[a-zA-Z0-9_-]{22}$', self.browseId):
+            await self.async_get_channel_id()
         await self.async_create()
 
     async def next(self):
         await self.async_next()
 
     @staticmethod
-    async def get(channel_id: str, request_type: str = ChannelRequestType.playlists):
+    async def get(channel_id: str, request_type: str = ChannelRequestType.info):
         channel_core = ChannelCore(channel_id, request_type)
+        if not re.match(r'^UC[a-zA-Z0-9_-]{22}$', channel_id):
+            await channel_core.async_get_channel_id()
         await channel_core.async_create()
         return channel_core.result
+
+    @staticmethod
+    async def getVideos(channel_id: str):
+        return await Channel.get(channel_id, ChannelRequestType.Videos)

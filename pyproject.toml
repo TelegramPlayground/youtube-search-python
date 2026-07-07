@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youtube-search-python"
+version = "1.6.9"
+authors = [
+    {name = "Hitesh Kumar Saini", email = "saini123hitesh@gmail.com"}
+]
+description = "Search for YouTube videos, channels & playlists & get video information using link WITHOUT YouTube Data API v3"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "httpx>=0.26.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/alexmercerind/youtube-search-python"
+
+[tool.setuptools.packages.find]
+include = ["youtubesearchpython*"]

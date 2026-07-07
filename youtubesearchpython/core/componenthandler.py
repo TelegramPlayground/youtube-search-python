@@ -1,21 +1,20 @@
 from typing import Union, List
 
-
-def getValue(source: dict, path: List[str]) -> Union[str, int, dict, None]:
+def getValue(source: dict, path: List[Union[str, int]]) -> Union[str, int, dict, list, None]:
     value = source
     for key in path:
-        if type(key) is str:
-            if key in value.keys():
+        if isinstance(value, dict) and isinstance(key, str):
+            if key in value:
                 value = value[key]
             else:
-                value = None
-                break
-        elif type(key) is int:
-            if len(value) != 0:
+                return None
+        elif isinstance(value, list) and isinstance(key, int):
+            if 0 <= key < len(value):
                 value = value[key]
             else:
-                value = None
-                break
+                return None
+        else:
+            return None
     return value
 
 
