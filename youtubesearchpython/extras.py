@@ -1852,3 +1852,6 @@ class Channel(ChannelCore):
     def getVideos(channel_id: str):
         return Channel.get(channel_id, ChannelRequestType.Videos)
 
+    @staticmethod
+    def getPlayLists(channel_id: str):
+        return Channel.get(channel_id, ChannelRequestType.playlists)

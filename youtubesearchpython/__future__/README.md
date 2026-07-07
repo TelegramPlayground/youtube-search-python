@@ -2,8 +2,6 @@
 
 #### Search for YouTube videos, channels & playlists & get video information using link WITHOUT YouTube Data API v3.
 
-##### Important: As of v1.6.1, we no longer use PyTube (see https://github.com/alexmercerind/youtube-search-python/pull/155). You have to install yt-dlp in order to use StreamURLFetcher: `pip install yt-dlp`
-
 Works without YouTube Data API v3 and has zero dependencies.
 
 Working as of 2022.

@@ -141,19 +141,34 @@ class ChannelCore(RequestCore):
     def extract_videos_info(self):
         extracted = []
 
-        for item in getValue(self.data.json(),["contents", "twoColumnBrowseResultsRenderer", "tabs", 1, "tabRenderer","content", "richGridRenderer", "contents"]):
-            video_data = getValue(item, ["richItemRenderer", "content", "videoRenderer"])
+        tabs = getValue(self.data.json(), ["contents", "twoColumnBrowseResultsRenderer", "tabs"])
+        target_contents = []
 
-            video_id = getValue(video_data, ["videoId"])
-            title = getValue(video_data, ["title", "runs", 0, "text"])
-            duration = getValue(video_data, ["lengthText", "simpleText"])
-            duration_accessible = getValue(video_data, ["lengthText", "accessibility", "accessibilityData", "label"])
-            views = getValue(video_data, ["viewCountText", "simpleText"])
-            short_views = getValue(video_data, ["shortViewCountText", "simpleText"])
-            published_time = getValue(video_data, ["publishedTimeText", "simpleText"])
-            description = getValue(video_data, ["descriptionSnippet", "runs", 0, "text"])
-            thumbnails = getValue(video_data, ["thumbnail", "thumbnails"])
-            rich_thumbnail = getValue(video_data, ["richThumbnail", "movingThumbnailRenderer", "movingThumbnailDetails", "thumbnails", 0, "url"])
+        for tab in tabs:
+            if tab.get("tabRenderer", {}).get("selected", False):
+                target_contents = getValue(tab, ["tabRenderer", "content", "richGridRenderer", "contents"]) or []
+                break
+
+        for item in target_contents:
+            video_data = getValue(item, ["richItemRenderer", "content", "lockupViewModel"])
+            if not video_data:
+                continue
+
+            video_id = getValue(video_data, ["contentId"])
+            title = getValue(video_data, ["metadata", "lockupMetadataViewModel", "title", "content"])
+            duration = getValue(video_data,
+                                ["contentImage", "thumbnailViewModel", "overlays", 0, "thumbnailBottomOverlayViewModel",
+                                 "badges", 0, "thumbnailBadgeViewModel", "text"])
+            duration_accessible = getValue(video_data, ["contentImage", "thumbnailViewModel", "overlays", 0,
+                                                        "thumbnailBottomOverlayViewModel", "badges", 0,
+                                                        "thumbnailBadgeViewModel", "rendererContext",
+                                                        "accessibilityContext", "label"])
+            views = getValue(video_data, ["metadata", "lockupMetadataViewModel", "metadata", "contentMetadataViewModel",
+                                          "metadataRows", 0, "metadataParts", 0, "text", "content"])
+            published_time = getValue(video_data,
+                                      ["metadata", "lockupMetadataViewModel", "metadata", "contentMetadataViewModel",
+                                       "metadataRows", 0, "metadataParts", 1, "text", "content"])
+            thumbnails = getValue(video_data, ["contentImage", "thumbnailViewModel", "image", "sources"])
 
             video_info = {
                 "video_id": video_id,
@@ -163,33 +178,44 @@ class ChannelCore(RequestCore):
                 "duration_seconds": parse_duration_to_seconds(duration),
                 "views": views,
                 "views_int": parse_to_int_from_number_string(views),
-                "short_views": short_views,
                 "published_time": published_time,
-                "description": description,
                 "thumbnails": thumbnails,
-                "rich_thumbnail": rich_thumbnail,
                 "watch_url": f"https://www.youtube.com/watch?v={video_id}" if video_id else None
             }
 
             extracted.append(video_info)
 
-        return extracted[:-1]
+        return extracted[:-1] if extracted else []
 
     def extract_playlists_info(self):
         extracted = []
-        for item in getValue(self.data.json(),["contents","twoColumnBrowseResultsRenderer","tabs",3,"tabRenderer","content","sectionListRenderer","contents",0,"itemSectionRenderer","contents",0,'gridRenderer','items']):
+
+        tabs = getValue(self.data.json(), ["contents", "twoColumnBrowseResultsRenderer", "tabs"])
+        target_items = []
+
+        for tab in tabs:
+            if tab.get("tabRenderer", {}).get("selected", False):
+                target_items = getValue(tab, ["tabRenderer", "content", "sectionListRenderer", "contents", 0,
+                                              "itemSectionRenderer", "contents", 0, "gridRenderer", "items"]) or []
+                break
+
+        for item in target_items:
             lockup = getValue(item, ["lockupViewModel"])
 
             playlist_id = getValue(lockup, ["contentId"])
             title = getValue(lockup, ["metadata", "lockupMetadataViewModel", "title", "content"])
 
-            video_count_text = getValue(lockup,["contentImage", "collectionThumbnailViewModel", "primaryThumbnail", "thumbnailViewModel","overlays", 0, "thumbnailOverlayBadgeViewModel",'thumbnailBadges', 0, "thumbnailBadgeViewModel", "text"])
+            video_count_text = getValue(lockup, ["contentImage", "collectionThumbnailViewModel", "primaryThumbnail",
+                                                 "thumbnailViewModel", "overlays", 0, "thumbnailOverlayBadgeViewModel",
+                                                 'thumbnailBadges', 0, "thumbnailBadgeViewModel", "text"])
 
             video_count = int(re.findall(r'\d+', video_count_text.replace(",", ""))[0]) if video_count_text else 0
 
-            thumbnail = getValue(lockup,["contentImage", "collectionThumbnailViewModel", "primaryThumbnail","thumbnailViewModel", "image", "sources", 0, "url"])
+            thumbnail = getValue(lockup, ["contentImage", "collectionThumbnailViewModel", "primaryThumbnail",
+                                          "thumbnailViewModel", "image", "sources", 0, "url"])
 
-            first_video_id = getValue(lockup,["rendererContext", "commandContext", "onTap", "innertubeCommand", "watchEndpoint", "videoId"])
+            first_video_id = getValue(lockup, ["rendererContext", "commandContext", "onTap", "innertubeCommand",
+                                               "watchEndpoint", "videoId"])
 
             url = f"https://www.youtube.com/playlist?list={playlist_id}" if playlist_id else None
             first_watch_url = f"https://www.youtube.com/watch?v={first_video_id}&list={playlist_id}" if playlist_id and first_video_id else None
